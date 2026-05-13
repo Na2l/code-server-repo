@@ -23,17 +23,6 @@ symlink() {
   esac
 }
 
-# VS Code bundles some modules into an asar which is an archive format that
-# works like tar. It then seems to get unpacked into node_modules.asar.
-#
-# I don't know why they do this but all the dependencies they bundle already
-# exist in node_modules so just symlink it. We have to do this since not only
-# Code itself but also extensions will look specifically in this directory for
-# files (like the ripgrep binary or the oniguruma wasm).
-symlink_asar() {
-  symlink node_modules node_modules.asar
-}
-
 # Make a symlink at bin/$1/$3 pointing to the platform-specific version of the
 # script in $2.  The extension of the link will be .cmd for Windows otherwise it
 # will be whatever is in $4 (or no extension if $4 is not set).
@@ -76,8 +65,8 @@ main() {
     echo "USE AT YOUR OWN RISK!"
   fi
 
-  if [ "$major_node_version" -ne "${FORCE_NODE_VERSION:-20}" ]; then
-    echo "ERROR: code-server currently requires node v20."
+  if [ "$major_node_version" -ne "${FORCE_NODE_VERSION:-22}" ]; then
+    echo "ERROR: code-server currently requires node v22."
     if [ -n "$FORCE_NODE_VERSION" ]; then
       echo "However, you have overrided the version check to use v$FORCE_NODE_VERSION."
     fi
@@ -145,7 +134,6 @@ vscode_install() {
     return 1
   fi
 
-  symlink_asar
   symlink_bin_script remote-cli code code-server
   symlink_bin_script helpers browser browser .sh
 

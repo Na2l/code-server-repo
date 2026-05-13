@@ -4,15 +4,15 @@ import * as express from "express"
 import { promises as fs } from "fs"
 import * as http from "http"
 import * as net from "net"
+import * as os from "os"
 import * as path from "path"
-import { WebsocketRequest } from "../../../typings/pluginapi"
 import { logError } from "../../common/util"
 import { CodeArgs, toCodeArgs } from "../cli"
 import { isDevMode, vsRootPath } from "../constants"
 import { authenticated, ensureAuthenticated, ensureOrigin, redirect, replaceTemplates, self } from "../http"
 import { SocketProxyProvider } from "../socket"
 import { isFile } from "../util"
-import { Router as WsRouter } from "../wsRouter"
+import { type WebsocketRequest, Router as WsRouter } from "../wsRouter"
 
 export const router = express.Router()
 
@@ -58,7 +58,11 @@ async function loadVSCode(req: express.Request): Promise<IVSCodeServerAPI> {
   // which will also require that we switch to ESM, since a hybrid approach
   // breaks importing `rotating-file-stream` for some reason.  To work around
   // this, use `eval` for now, but we should consider switching to ESM.
-  const modPath = path.join(vsRootPath, "out/server-main.js")
+  let modPath = path.join(vsRootPath, "out/server-main.js")
+  if (os.platform() === "win32") {
+    // On Windows, absolute paths of ESM modules must be a valid file URI.
+    modPath = "file:///" + modPath.replace(/\\/g, "/")
+  }
   const mod = (await eval(`import("${modPath}")`)) as VSCodeModule
   const serverModule = await mod.loadCodeWithNls()
   return serverModule.createServer(null, {
@@ -168,25 +172,35 @@ router.get("/", ensureVSCodeLoaded, async (req, res, next) => {
 })
 
 router.get("/manifest.json", async (req, res) => {
-  const appName = req.args["app-name"] || "code-server"
   res.writeHead(200, { "Content-Type": "application/manifest+json" })
 
-  return res.end(
+  res.end(
     replaceTemplates(
       req,
       JSON.stringify(
         {
-          name: appName,
-          short_name: appName,
+          name: req.args["app-name"],
+          short_name: req.args["app-name"],
           start_url: ".",
           display: "fullscreen",
           display_override: ["window-controls-overlay"],
           description: "Run Code on a remote server.",
-          icons: [192, 512].map((size) => ({
-            src: `{{BASE}}/_static/src/browser/media/pwa-icon-${size}.png`,
-            type: "image/png",
-            sizes: `${size}x${size}`,
-          })),
+          icons: [192, 512]
+            .map((size) => [
+              {
+                src: `{{BASE}}/_static/src/browser/media/pwa-icon-${size}.png`,
+                type: "image/png",
+                sizes: `${size}x${size}`,
+                purpose: "any",
+              },
+              {
+                src: `{{BASE}}/_static/src/browser/media/pwa-icon-maskable-${size}.png`,
+                type: "image/png",
+                sizes: `${size}x${size}`,
+                purpose: "maskable",
+              },
+            ])
+            .flat(),
         },
         null,
         2,

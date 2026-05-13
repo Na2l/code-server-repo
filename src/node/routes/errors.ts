@@ -2,11 +2,11 @@ import { logger } from "@coder/logger"
 import express from "express"
 import { promises as fs } from "fs"
 import path from "path"
-import { WebsocketRequest } from "../../../typings/pluginapi"
 import { HttpCode } from "../../common/http"
 import { rootPath } from "../constants"
 import { replaceTemplates } from "../http"
 import { escapeHtml, getMediaMime } from "../util"
+import type { WebsocketRequest } from "../wsRouter"
 
 interface ErrorWithStatusCode {
   statusCode: number
@@ -28,6 +28,12 @@ export const errorHasCode = (error: any): error is ErrorWithCode => {
 
 const notFoundCodes = [404, "ENOENT", "EISDIR"]
 
+/**
+ * Final HTTP error handler.
+ *
+ * Note: This handler intentionally does not call `next()` even though it
+ * accepts it as an argument; it is expected to be mounted last.
+ */
 export const errorHandler: express.ErrorRequestHandler = async (err, req, res, next) => {
   let statusCode = 500
 
@@ -51,7 +57,8 @@ export const errorHandler: express.ErrorRequestHandler = async (err, req, res, n
       replaceTemplates(req, content)
         .replace(/{{ERROR_TITLE}}/g, statusCode.toString())
         .replace(/{{ERROR_HEADER}}/g, statusCode.toString())
-        .replace(/{{ERROR_BODY}}/g, escapeHtml(err.message)),
+        .replace(/{{ERROR_BODY}}/g, escapeHtml(err.message))
+        .replace(/{{APP_NAME}}/g, req.args["app-name"]),
     )
   } else {
     res.json({
@@ -61,6 +68,12 @@ export const errorHandler: express.ErrorRequestHandler = async (err, req, res, n
   }
 }
 
+/**
+ * Final WebSocket error handler.
+ *
+ * Note: This handler intentionally does not call `next()` even though it
+ * accepts it as an argument; it is expected to be mounted last.
+ */
 export const wsErrorHandler: express.ErrorRequestHandler = async (err, req, res, next) => {
   let statusCode = 500
   if (errorHasStatusCode(err)) {

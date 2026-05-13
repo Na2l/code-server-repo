@@ -30,7 +30,7 @@ includes installing instructions based on your operating system.
 ## Node.js version
 
 We use the same major version of Node.js shipped with Code's remote, which is
-currently `20.x`. VS Code also [lists Node.js
+currently `22.x`. VS Code also [lists Node.js
 requirements](https://github.com/microsoft/vscode/wiki/How-to-Contribute#prerequisites).
 
 Using other versions of Node.js [may lead to unexpected
@@ -62,8 +62,7 @@ Proceed to [installing](#installing)
 ## Alpine
 
 ```bash
-apk add alpine-sdk bash libstdc++ libc6-compat
-npm config set python python3
+apk add alpine-sdk bash libstdc++ libc6-compat python3 krb5-dev
 ```
 
 Proceed to [installing](#installing)
@@ -79,7 +78,7 @@ Proceed to [installing](#installing)
 ## FreeBSD
 
 ```sh
-pkg install -y git python npm-node20 pkgconf
+pkg install -y git python npm-node22 pkgconf
 pkg install -y libinotify
 ```
 

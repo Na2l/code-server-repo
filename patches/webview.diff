@@ -41,7 +41,7 @@ Index: code-server/lib/vscode/src/vs/workbench/services/environment/browser/envi
 ===================================================================
 --- code-server.orig/lib/vscode/src/vs/workbench/services/environment/browser/environmentService.ts
 +++ code-server/lib/vscode/src/vs/workbench/services/environment/browser/environmentService.ts
-@@ -225,7 +225,7 @@ export class BrowserWorkbenchEnvironment
+@@ -223,7 +223,7 @@ export class BrowserWorkbenchEnvironment
  
  	@memoize
  	get webviewExternalEndpoint(): string {
@@ -54,11 +54,11 @@ Index: code-server/lib/vscode/src/vs/server/node/webClientServer.ts
 ===================================================================
 --- code-server.orig/lib/vscode/src/vs/server/node/webClientServer.ts
 +++ code-server/lib/vscode/src/vs/server/node/webClientServer.ts
-@@ -326,6 +326,7 @@ export class WebClientServer {
+@@ -380,6 +380,7 @@ export class WebClientServer {
  		const workbenchWebConfiguration = {
  			remoteAuthority,
- 			serverBasePath: this._basePath,
-+			webviewEndpoint: vscodeBase + this._staticRoute + '/out/vs/workbench/contrib/webview/browser/pre',
+ 			serverBasePath: basePath,
++			webviewEndpoint: staticRoute + '/out/vs/workbench/contrib/webview/browser/pre',
  			_wrapWebWorkerExtHostInIframe,
  			developmentOptions: { enableSmokeTestDriver: this._environmentService.args['enable-smoke-test-driver'] ? true : undefined, logLevel: this._logService.getLevel() },
  			settingsSyncOptions: !this._environmentService.isBuilt && this._environmentService.args['enable-sync'] ? { enabled: true } : undefined,
@@ -70,29 +70,21 @@ Index: code-server/lib/vscode/src/vs/workbench/contrib/webview/browser/pre/index
  	<meta charset="UTF-8">
  
  	<meta http-equiv="Content-Security-Policy"
--		content="default-src 'none'; script-src 'sha256-DXeP32g8BdMsVuVabYTmznoTH59F7M7UtV0vXemEFqc=' 'self'; frame-src 'self'; style-src 'unsafe-inline';">
-+		content="default-src 'none'; script-src 'sha256-z5v/0xE4zQPgV1fazhHB/UlsTzdm39hRMk3V8Av0HI4=' 'self'; frame-src 'self'; style-src 'unsafe-inline';">
- 
+-		content="default-src 'none'; script-src 'sha256-q+WTr+fBXpLLE3++yWNaxT6BTWQtsKscoeIlynBRk4E=' 'self'; frame-src 'self'; style-src 'unsafe-inline';">
++		content="default-src 'none'; script-src 'sha256-m1DlJtsIJd46QuWYNcsaYIG1xI+9FyjKQu+cfp+zq5Q=' 'self'; frame-src 'self'; style-src 'unsafe-inline';">
  
  	<!-- Disable pinch zooming -->
-@@ -349,6 +349,12 @@
+ 	<meta name="viewport"
+@@ -253,7 +253,7 @@
+ 			}
  
- 				const hostname = location.hostname;
- 
-+				// It is safe to run if we are on the same host.
-+				const parent = new URL(parentOrigin)
-+				if (parent.hostname === hostname) {
-+					return start(parentOrigin)
-+				}
-+
- 				if (!crypto.subtle) {
- 					// cannot validate, not running in a secure context
- 					throw new Error(`'crypto.subtle' is not available so webviews will not work. This is likely because the editor is not running in a secure context (https://developer.mozilla.org/en-US/docs/Web/Security/Secure_Contexts).`);
-Index: code-server/lib/vscode/src/vs/workbench/contrib/webview/browser/pre/index-no-csp.html
-===================================================================
---- code-server.orig/lib/vscode/src/vs/workbench/contrib/webview/browser/pre/index-no-csp.html
-+++ code-server/lib/vscode/src/vs/workbench/contrib/webview/browser/pre/index-no-csp.html
-@@ -343,6 +343,12 @@
+ 			const swPath = encodeURI(`service-worker.js?v=${expectedWorkerVersion}&vscode-resource-base-authority=${searchParams.get('vscode-resource-base-authority')}&remoteAuthority=${searchParams.get('remoteAuthority') ?? ''}`);
+-			navigator.serviceWorker.register(swPath, { type: 'module', updateViaCache: 'none' })
++			navigator.serviceWorker.register(swPath)
+ 				.then(async registration => {
+ 					if (navigator.serviceWorker.controller) {
+ 						// A previous SW is already controlling. Force an update
+@@ -332,6 +332,12 @@
  
  				const hostname = location.hostname;
  
@@ -113,12 +105,12 @@ Index: code-server/lib/vscode/src/vs/workbench/services/extensions/worker/webWor
  		<meta http-equiv="Content-Security-Policy" content="
  			default-src 'none';
  			child-src 'self' data: blob:;
--			script-src 'self' 'unsafe-eval' 'sha256-xM2KVDKIoeb8vVxk4ezEUsxdTZh5wFnKO3YmFhy9tkk=' https: http://localhost:* blob:;
-+			script-src 'self' 'unsafe-eval' 'sha256-6eZXxikxkENULU0EOkVQSd4hglGixLg3Aow9psZ6u2Y=' https: http://localhost:* blob:;
+-			script-src 'self' 'unsafe-eval' 'sha256-cl8ijlOzEe+0GRCQNJQu2k6nUQ0fAYNYIuuKEm72JDs=' https: http://localhost:* blob:;
++			script-src 'self' 'unsafe-eval' 'sha256-yhZXuB8LS6t73dvNg6rtLX8y4PHLnqRm5+6DdOGkOcw=' https: http://localhost:* blob:;
  			connect-src 'self' https: wss: http://localhost:* http://127.0.0.1:* ws://localhost:* ws://127.0.0.1:*;"/>
  	</head>
  	<body>
-@@ -23,6 +23,13 @@
+@@ -25,6 +25,13 @@
  			// validation not requested
  			return start();
  		}
